@@ -12,7 +12,8 @@ import os
 import numpy as np
 from PIL import Image
 from fastapi import APIRouter, UploadFile, File, HTTPException
-import tensorflow as tf
+import tensorflow as tf  # pyrefly: ignore[missing-import]
+from routes.image_utils import check_image_quality
 
 router = APIRouter()
 
@@ -27,9 +28,9 @@ IDX_PATH   = os.path.join(MODEL_DIR, 'class_indices.json')
 # ── Load model once at startup ────────────────────────────────────
 try:
     model = tf.keras.models.load_model(os.path.abspath(MODEL_PATH))
-    print("✅ Model loaded:", MODEL_PATH)
+    print("[OK] Model loaded:", MODEL_PATH)
 except Exception as e:
-    print(f"❌ Model load failed: {e}")
+    print(f"[ERROR] Model load failed: {e}")
     model = None
 
 # ── Load class indices ────────────────────────────────────────────
@@ -39,9 +40,9 @@ try:
     with open(os.path.abspath(IDX_PATH)) as f:
         class_indices = json.load(f)
     CLASS_NAMES = {v: k for k, v in class_indices.items()}
-    print("✅ Class indices loaded:", CLASS_NAMES)
+    print("[OK] Class indices loaded:", CLASS_NAMES)
 except Exception as e:
-    print(f"❌ class_indices.json load failed: {e}")
+    print(f"[ERROR] class_indices.json load failed: {e}")
     CLASS_NAMES = {}
 
 # ── Image size ────────────────────────────────────────────────────
@@ -208,12 +209,33 @@ RECOMMENDATIONS = {
 }
 
 
-# ── Preprocessing ─────────────────────────────────────────────────
+import cv2
+
+# ── Preprocessing (OpenCV) ─────────────────────────────────────────
 def preprocess_image(image_bytes: bytes) -> np.ndarray:
-    img = Image.open(io.BytesIO(image_bytes)).convert('RGB')
-    img = img.resize((IMG_SIZE, IMG_SIZE), Image.LANCZOS)
-    arr = np.array(img, dtype=np.float32) / 255.0
-    return np.expand_dims(arr, axis=0)  # (1, IMG_SIZE, IMG_SIZE, 3)
+    # Step 1: Decode image bytes to OpenCV numpy array (BGR format)
+    nparr = np.frombuffer(image_bytes, np.uint8)
+    image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+    if image is None:
+        raise ValueError("Image could not be decoded by OpenCV")
+
+    # Step 2: Convert BGR to RGB
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+    # Step 3: Resize to model input size (224x224)
+    image = cv2.resize(image, (IMG_SIZE, IMG_SIZE))
+
+    # Step 4: Convert pixel values to float32
+    image = image.astype(np.float32)
+
+    # Step 5: Normalize pixel values (0.0 to 1.0)
+    image = image / 255.0
+
+    # Step 6: Add batch dimension (1, 224, 224, 3)
+    image = np.expand_dims(image, axis=0)
+
+    return image
 
 
 # ── Predict endpoint ──────────────────────────────────────────────
@@ -234,6 +256,20 @@ async def predict(file: UploadFile = File(...)):
 
     if len(contents) > 10 * 1024 * 1024:
         raise HTTPException(400, "File too large. Maximum 10MB.")
+
+    # OpenCV image quality check
+    quality = check_image_quality(contents)
+    if not quality["passed"]:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "type": "quality_error",
+                "message": "Image quality check failed.",
+                "issues": quality["issues"],
+                "blur_score": quality["blur_score"],
+                "brightness": quality["brightness"],
+            }
+        )
 
     try:
         img_array  = preprocess_image(contents)
