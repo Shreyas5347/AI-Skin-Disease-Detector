@@ -1,0 +1,17 @@
+﻿python-interpreter-path = "./venv/Scripts/python.exe"
+
+project-includes = [
+    "backend",
+    "model_training",
+]
+
+search-path = ["backend", "model_training"]
+
+project-excludes = [
+    "venv",
+    "frontend",
+    ".git",
+]
+
+[errors]
+missing-import = false
