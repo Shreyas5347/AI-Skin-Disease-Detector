@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import axios from 'axios';
 import './App.css';
 import DermalensMark from './components/DermalensMark';
+import CameraCapture from './components/CameraCapture';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
@@ -11,7 +12,12 @@ const SEVERITY_CLASS = {
   Moderate: 'moderate',
   Low:      'low',
 };
-
+const SEVERITY_STYLE = {
+  Critical: { bg: '#fff1f2', border: '#fda4af', badge: '#e11d48', text: '#9f1239' },
+  High:     { bg: '#fff7ed', border: '#fdba74', badge: '#ea580c', text: '#9a3412' },
+  Moderate: { bg: '#fefce8', border: '#fde047', badge: '#ca8a04', text: '#854d0e' },
+  Low:      { bg: '#f0fdf4', border: '#86efac', badge: '#16a34a', text: '#14532d' },
+};
 export default function App() {
   const [image, setImage]       = useState(null);
   const [preview, setPreview]   = useState(null);
@@ -19,6 +25,9 @@ export default function App() {
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState(null);
   const [dragOver, setDragOver] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [imageSource, setImageSource] = useState('');
+  // imageSource: 'upload' | 'camera'
   const fileRef = useRef();
 
   const handleFile = (file) => {
@@ -33,8 +42,17 @@ export default function App() {
     setPreview(URL.createObjectURL(file));
     setResult(null);
     setError(null);
+    setImageSource('upload');
   };
-
+  
+  // ── Handle capture from camera ───────────────────────────────────
+  const handleCameraCapture = (file, previewUrl) => {
+    setImage(file);
+    setPreview(previewUrl);
+    setResult(null); setError(null);
+    setShowCamera(false);
+    setImageSource('camera');
+  };
   const handleAnalyze = async () => {
     if (!image || loading) return;
     setLoading(true);
@@ -49,8 +67,18 @@ export default function App() {
       });
       setResult(res.data);
     } catch (err) {
-      if (err.response)
-        setError(err.response.data?.detail || 'Server error. Please try again.');
+      if (err.response) {
+        const detail = err.response.data?.detail;
+        if (typeof detail === 'object' && detail !== null) {
+          if (Array.isArray(detail.issues) && detail.issues.length > 0) {
+            setError(detail.issues.join(' '));
+          } else {
+            setError(detail.message || 'Image quality check failed.');
+          }
+        } else {
+          setError(detail || 'Server error. Please try again.');
+        }
+      }
       else if (err.code === 'ECONNABORTED')
         setError('Request timed out. Server may be starting up — wait 30 s and retry.');
       else
@@ -65,6 +93,7 @@ export default function App() {
     setPreview(null);
     setResult(null);
     setError(null);
+    setImageSource('');
     if (fileRef.current) fileRef.current.value = '';
   };
 
@@ -74,6 +103,13 @@ export default function App() {
 
   return (
     <div className="app">
+       {/* Camera modal */}
+      {showCamera && (
+        <CameraCapture
+          onCapture={handleCameraCapture}
+          onClose={() => setShowCamera(false)}
+        />
+      )}
 
       {/* ── Header ── */}
       <header className="header">
@@ -163,6 +199,28 @@ export default function App() {
                 </div>
               </div>
 
+              {/* Upload / Camera Card */}
+              <div className="card upload-card">
+                <h2 className="card-title">Analyze Skin Image</h2>
+                <p className="card-subtitle">
+                  Upload a photo or use your camera to capture the skin lesion for AI analysis.
+                </p>
+
+                {/* Source toggle buttons */}
+                <div className="source-toggle">
+                  <button
+                    className={`toggle-btn ${imageSource !== 'camera' ? 'active' : ''}`}
+                    onClick={() => fileRef.current?.click()}
+                  >
+                    📁 Upload Image
+                  </button>
+                  <button
+                    className={`toggle-btn ${imageSource === 'camera' ? 'active' : ''}`}
+                    onClick={() => setShowCamera(true)}
+                  >
+                    📷 Use Camera
+                  </button>
+                </div>
               {/* Drop zone */}
               <div
                 id="upload-dropzone"
@@ -245,8 +303,9 @@ export default function App() {
                 </div>
               </div>
             </div>
-          </section>
-        )}
+          </div>
+        </section>
+      )}
 
         {/* ── Results ── */}
         {result && (
@@ -357,56 +416,33 @@ export default function App() {
           </div>
         )}
 
-        {/* ── How it works (shown on landing) ── */}
+        {/* How it works */}
         {!result && !loading && (
-          <section className="how-section anim-rise-2">
-            <div className="section-heading">
-              <div className="section-heading-eyebrow">
-                <span>◎</span> How it works
-              </div>
-            </div>
-
-            <div className="steps-grid">
+          <div className="card how-it-works">
+            <h3 className="section-title">How It Works</h3>
+            <div className="steps-row">
               {[
-                {
-                  icon: '📤',
-                  step: '01',
-                  title: 'Upload image',
-                  desc: 'Upload a clear, well-lit close-up of the skin lesion (JPG or PNG, max 10 MB).',
-                },
-                {
-                  icon: '🤖',
-                  step: '02',
-                  title: 'AI analysis',
-                  desc: 'MobileNetV2 trained on 10,015 HAM10000 images screens the image in seconds.',
-                },
-                {
-                  icon: '📋',
-                  step: '03',
-                  title: 'Get context',
-                  desc: 'Receive a condition overview, confidence score, and what to do next.',
-                },
+                { icon: '📤', step: '1', title: 'Upload or Capture', desc: 'Upload a photo from your device or capture directly using your camera' },
+                { icon: '🔍', step: '2', title: 'Quality Check',     desc: 'OpenCV checks image sharpness and lighting before AI analysis' },
+                { icon: '🤖', step: '3', title: 'AI Analysis',       desc: 'MobileNetV2 trained on 10,015 HAM10000 images classifies the lesion' },
+                { icon: '📋', step: '4', title: 'Get Results',       desc: 'Receive disease prediction, confidence score, and medical recommendations' },
               ].map((s) => (
-                <div key={s.step} className="step-card">
+                <div key={s.step} className="step-item">
                   <div className="step-icon">{s.icon}</div>
-                  <div className="step-number">Step {s.step}</div>
+                  <div className="step-num">Step {s.step}</div>
                   <div className="step-title">{s.title}</div>
                   <div className="step-desc">{s.desc}</div>
                 </div>
               ))}
             </div>
-
-            <div className="tags-row">
-              <span className="tags-label">Detects:</span>
-              {[
-                'Melanoma', 'Nevus', 'Basal Cell Carcinoma',
-                'Actinic Keratosis', 'Benign Keratosis',
-                'Dermatofibroma', 'Vascular Lesion',
-              ].map((d) => (
+            <div className="disease-tags">
+              <div className="disease-tags-label">Detects 7 skin conditions:</div>
+              {['Melanoma','Nevus','Basal Cell Carcinoma','Actinic Keratosis',
+                'Benign Keratosis','Dermatofibroma','Vascular Lesion'].map(d => (
                 <span key={d} className="disease-tag">{d}</span>
               ))}
             </div>
-          </section>
+          </div>
         )}
       </main>
 
