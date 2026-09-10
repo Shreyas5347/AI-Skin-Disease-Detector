@@ -33,11 +33,19 @@ def check_image_quality(image_bytes: bytes) -> dict:
 
     # ── Convert bytes → numpy array (OpenCV format) ───────────────
     # PIL opens the image, converts to RGB, then to numpy array
-    pil_img   = Image.open(io.BytesIO(image_bytes)).convert('RGB')
-    img_array = np.array(pil_img)
-
-    # OpenCV uses BGR, PIL uses RGB — convert
-    img_bgr = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
+    try:
+        pil_img   = Image.open(io.BytesIO(image_bytes)).convert('RGB')
+        img_array = np.array(pil_img)
+        img_bgr   = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
+    except Exception:
+        return {
+            "passed": False,
+            "issues": ["Could not decode the image file. Please upload a valid image."],
+            "blur_score": 0.0,
+            "brightness": 0.0,
+            "width": 0,
+            "height": 0,
+        }
 
     height, width = img_bgr.shape[:2]
 

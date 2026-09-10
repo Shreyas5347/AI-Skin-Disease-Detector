@@ -213,26 +213,27 @@ import cv2
 
 # ── Preprocessing (OpenCV) ─────────────────────────────────────────
 def preprocess_image(image_bytes: bytes) -> np.ndarray:
-    # Step 1: Decode image bytes to OpenCV numpy array (BGR format)
-    nparr = np.frombuffer(image_bytes, np.uint8)
-    image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    # Step 1: Decode image bytes. PIL supports all formats and converts RGBA/palette to RGB.
+    try:
+        pil_img = Image.open(io.BytesIO(image_bytes)).convert('RGB')
+        image = np.array(pil_img)
+    except Exception:
+        nparr = np.frombuffer(image_bytes, np.uint8)
+        image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if image is None:
+            raise ValueError("Image could not be decoded.")
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-    if image is None:
-        raise ValueError("Image could not be decoded by OpenCV")
-
-    # Step 2: Convert BGR to RGB
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
-    # Step 3: Resize to model input size (224x224)
+    # Step 2: Resize to model input size (224x224)
     image = cv2.resize(image, (IMG_SIZE, IMG_SIZE))
 
-    # Step 4: Convert pixel values to float32
+    # Step 3: Convert pixel values to float32
     image = image.astype(np.float32)
 
-    # Step 5: Normalize pixel values (0.0 to 1.0)
+    # Step 4: Normalize pixel values (0.0 to 1.0)
     image = image / 255.0
 
-    # Step 6: Add batch dimension (1, 224, 224, 3)
+    # Step 5: Add batch dimension (1, 224, 224, 3)
     image = np.expand_dims(image, axis=0)
 
     return image
@@ -242,9 +243,15 @@ def preprocess_image(image_bytes: bytes) -> np.ndarray:
 @router.post("/predict")
 async def predict(file: UploadFile = File(...)):
 
-    # Validate file type
-    if file.content_type not in {"image/jpeg", "image/jpg", "image/png"}:
-        raise HTTPException(400, "Only JPG and PNG images accepted.")
+    # Validate file type - allow all image formats
+    is_image = (
+        (file.content_type and file.content_type.startswith("image/"))
+        or (file.filename and file.filename.lower().endswith(
+            (".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".tiff", ".tif", ".jfif", ".avif", ".heic", ".heif", ".ico", ".svg")
+        ))
+    )
+    if not is_image:
+        raise HTTPException(400, "Please upload a valid image file.")
 
     if model is None:
         raise HTTPException(503, "Model not loaded. Check server logs.")

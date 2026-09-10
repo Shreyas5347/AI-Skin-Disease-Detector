@@ -32,8 +32,11 @@ export default function App() {
 
   const handleFile = (file) => {
     if (!file) return;
-    if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
-      setError('Please upload a JPG or PNG image only.'); return;
+    const isImage = file.type
+      ? file.type.startsWith('image/')
+      : /\.(jpe?g|png|webp|bmp|gif|tiff?|svg|heic|heif|avif)$/i.test(file.name);
+    if (!isImage) {
+      setError('Please upload a valid image file.'); return;
     }
     if (file.size > 10 * 1024 * 1024) {
       setError('File is too large. Maximum size is 10 MB.'); return;
@@ -258,8 +261,13 @@ export default function App() {
               <input
                 ref={fileRef}
                 type="file"
-                accept="image/jpeg,image/png"
-                onChange={(e) => handleFile(e.target.files[0])}
+                accept="image/*,.jpg,.jpeg,.png,.webp,.bmp,.gif,.tiff,.tif,.heic,.heif,.avif"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    handleFile(e.target.files[0]);
+                  }
+                  e.target.value = '';
+                }}
                 style={{ display: 'none' }}
                 aria-label="Upload skin image"
               />
