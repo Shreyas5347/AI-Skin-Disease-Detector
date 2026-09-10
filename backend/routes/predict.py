@@ -242,17 +242,6 @@ def preprocess_image(image_bytes: bytes) -> np.ndarray:
 # ── Predict endpoint ──────────────────────────────────────────────
 @router.post("/predict")
 async def predict(file: UploadFile = File(...)):
-
-    # Validate file type - allow all image formats
-    is_image = (
-        (file.content_type and file.content_type.startswith("image/"))
-        or (file.filename and file.filename.lower().endswith(
-            (".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".tiff", ".tif", ".jfif", ".avif", ".heic", ".heif", ".ico", ".svg")
-        ))
-    )
-    if not is_image:
-        raise HTTPException(400, "Please upload a valid image file.")
-
     if model is None:
         raise HTTPException(503, "Model not loaded. Check server logs.")
 
@@ -263,15 +252,15 @@ async def predict(file: UploadFile = File(...)):
 
     if len(contents) > 10 * 1024 * 1024:
         raise HTTPException(400, "File too large. Maximum 10MB.")
-
-    # OpenCV image quality check
+#OpenCV image quality check
+    # Validate image format and quality (accepts any image format that can be decoded)
     quality = check_image_quality(contents)
     if not quality["passed"]:
         raise HTTPException(
             status_code=400,
             detail={
                 "type": "quality_error",
-                "message": "Image quality check failed.",
+                "message": "Image check failed.",
                 "issues": quality["issues"],
                 "blur_score": quality["blur_score"],
                 "brightness": quality["brightness"],

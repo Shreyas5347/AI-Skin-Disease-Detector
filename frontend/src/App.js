@@ -34,7 +34,7 @@ export default function App() {
     if (!file) return;
     const isImage = file.type
       ? file.type.startsWith('image/')
-      : /\.(jpe?g|png|webp|bmp|gif|tiff?|svg|heic|heif|avif)$/i.test(file.name);
+      : /\.(jpe?g|png|webp|bmp|gif|tiff?|svg|heic|heif|avif|ico|cur|jfif|pjpeg|pjp|raw|cr2|nef|dng)$/i.test(file.name);
     if (!isImage) {
       setError('Please upload a valid image file.'); return;
     }

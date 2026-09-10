@@ -38,14 +38,20 @@ def check_image_quality(image_bytes: bytes) -> dict:
         img_array = np.array(pil_img)
         img_bgr   = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
     except Exception:
-        return {
-            "passed": False,
-            "issues": ["Could not decode the image file. Please upload a valid image."],
-            "blur_score": 0.0,
-            "brightness": 0.0,
-            "width": 0,
-            "height": 0,
-        }
+        try:
+            nparr = np.frombuffer(image_bytes, np.uint8)
+            img_bgr = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            if img_bgr is None:
+                raise ValueError("Could not decode")
+        except Exception:
+            return {
+                "passed": False,
+                "issues": ["Could not decode the image file. Please upload a valid image."],
+                "blur_score": 0.0,
+                "brightness": 0.0,
+                "width": 0,
+                "height": 0,
+            }
 
     height, width = img_bgr.shape[:2]
 
