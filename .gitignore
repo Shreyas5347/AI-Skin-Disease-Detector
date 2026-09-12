@@ -6,3 +6,5 @@ __pycache__/
 node_modules/
 all_images/
 dataset/
+frontend/build/
+*.keras

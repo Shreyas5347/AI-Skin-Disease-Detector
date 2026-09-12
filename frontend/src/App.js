@@ -8,22 +8,22 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
 const SEVERITY_CLASS = {
   Critical: 'critical',
-  High:     'high',
+  High: 'high',
   Moderate: 'moderate',
-  Low:      'low',
+  Low: 'low',
 };
 const SEVERITY_STYLE = {
   Critical: { bg: '#fff1f2', border: '#fda4af', badge: '#e11d48', text: '#9f1239' },
-  High:     { bg: '#fff7ed', border: '#fdba74', badge: '#ea580c', text: '#9a3412' },
+  High: { bg: '#fff7ed', border: '#fdba74', badge: '#ea580c', text: '#9a3412' },
   Moderate: { bg: '#fefce8', border: '#fde047', badge: '#ca8a04', text: '#854d0e' },
-  Low:      { bg: '#f0fdf4', border: '#86efac', badge: '#16a34a', text: '#14532d' },
+  Low: { bg: '#f0fdf4', border: '#86efac', badge: '#16a34a', text: '#14532d' },
 };
 export default function App() {
-  const [image, setImage]       = useState(null);
-  const [preview, setPreview]   = useState(null);
-  const [result, setResult]     = useState(null);
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState(null);
+  const [image, setImage] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [dragOver, setDragOver] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [imageSource, setImageSource] = useState('');
@@ -47,7 +47,7 @@ export default function App() {
     setError(null);
     setImageSource('upload');
   };
-  
+
   // ── Handle capture from camera ───────────────────────────────────
   const handleCameraCapture = (file, previewUrl) => {
     setImage(file);
@@ -106,7 +106,7 @@ export default function App() {
 
   return (
     <div className="app">
-       {/* Camera modal */}
+      {/* Camera modal */}
       {showCamera && (
         <CameraCapture
           onCapture={handleCameraCapture}
@@ -224,96 +224,96 @@ export default function App() {
                     📷 Use Camera
                   </button>
                 </div>
-              {/* Drop zone */}
-              <div
-                id="upload-dropzone"
-                className={`upload-panel ${dragOver ? 'dragover' : ''} ${preview ? 'has-preview' : ''}`}
-                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-                onDragLeave={() => setDragOver(false)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setDragOver(false);
-                  handleFile(e.dataTransfer.files[0]);
-                }}
-                onClick={() => !preview && fileRef.current?.click()}
-              >
-                {preview ? (
-                  <img src={preview} alt="Uploaded skin image preview" className="preview-img" />
-                ) : (
-                  <>
-                    <div className="upload-icon-wrap anim-breathe">⬆</div>
-                    <div className="upload-title">Bring a skin image here</div>
-                    <p className="upload-desc">
-                      Drop an image or choose one from your device.
-                      A well-lit, close-up photo works best.
-                    </p>
-                    <button
-                      id="choose-image-btn"
-                      className="upload-cta"
-                      onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}
-                    >
-                      Choose image
-                    </button>
-                  </>
-                )}
-              </div>
-
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*,.jpg,.jpeg,.png,.webp,.bmp,.gif,.tiff,.tif,.heic,.heif,.avif"
-                onChange={(e) => {
-                  if (e.target.files && e.target.files[0]) {
-                    handleFile(e.target.files[0]);
-                  }
-                  e.target.value = '';
-                }}
-                style={{ display: 'none' }}
-                aria-label="Upload skin image"
-              />
-
-              {/* Error notice */}
-              {error && !result && (
-                <div className="notice-box error" role="alert">
-                  <span>⚠</span> {error}
-                </div>
-              )}
-
-              {/* Screen button */}
-              <div className="screen-btn-wrap">
-                <button
-                  id="screen-btn"
-                  className={`btn-screen ${image && !loading ? 'ready' : ''} ${loading ? 'loading' : ''}`}
-                  onClick={handleAnalyze}
-                  disabled={!image || loading}
-                  aria-label="Analyze uploaded skin image"
+                {/* Drop zone */}
+                <div
+                  id="upload-dropzone"
+                  className={`upload-panel ${dragOver ? 'dragover' : ''} ${preview ? 'has-preview' : ''}`}
+                  onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragOver(false);
+                    handleFile(e.dataTransfer.files[0]);
+                  }}
+                  onClick={() => !preview && fileRef.current?.click()}
                 >
-                  {loading ? (
-                    <><span className="spinner" aria-hidden="true" /> Screening image…</>
+                  {preview ? (
+                    <img src={preview} alt="Uploaded skin image preview" className="preview-img" />
                   ) : (
-                    <>Screen this image →</>
+                    <>
+                      <div className="upload-icon-wrap anim-breathe">⬆</div>
+                      <div className="upload-title">Bring a skin image here</div>
+                      <p className="upload-desc">
+                        Drop an image or choose one from your device.
+                        A well-lit, close-up photo works best.
+                      </p>
+                      <button
+                        id="choose-image-btn"
+                        className="upload-cta"
+                        onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}
+                      >
+                        Choose image
+                      </button>
+                    </>
                   )}
-                </button>
+                </div>
 
-                {preview && (
-                  <button
-                    id="clear-btn"
-                    className="btn-reset"
-                    onClick={handleReset}
-                    style={{ alignSelf: 'center' }}
-                  >
-                    ✕ Clear image
-                  </button>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*,.jpg,.jpeg,.png,.webp,.bmp,.gif,.tiff,.tif,.heic,.heif,.avif"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      handleFile(e.target.files[0]);
+                    }
+                    e.target.value = '';
+                  }}
+                  style={{ display: 'none' }}
+                  aria-label="Upload skin image"
+                />
+
+                {/* Error notice */}
+                {error && !result && (
+                  <div className="notice-box error" role="alert">
+                    <span>⚠</span> {error}
+                  </div>
                 )}
 
-                <div className="screen-disclaimer">
-                  By continuing, you confirm this image does not contain identifying information.
+                {/* Screen button */}
+                <div className="screen-btn-wrap">
+                  <button
+                    id="screen-btn"
+                    className={`btn-screen ${image && !loading ? 'ready' : ''} ${loading ? 'loading' : ''}`}
+                    onClick={handleAnalyze}
+                    disabled={!image || loading}
+                    aria-label="Analyze uploaded skin image"
+                  >
+                    {loading ? (
+                      <><span className="spinner" aria-hidden="true" /> Screening image…</>
+                    ) : (
+                      <>Screen this image →</>
+                    )}
+                  </button>
+
+                  {preview && (
+                    <button
+                      id="clear-btn"
+                      className="btn-reset"
+                      onClick={handleReset}
+                      style={{ alignSelf: 'center' }}
+                    >
+                      ✕ Clear image
+                    </button>
+                  )}
+
+                  <div className="screen-disclaimer">
+                    By continuing, you confirm this image does not contain identifying information.
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
-      )}
+          </section>
+        )}
 
         {/* ── Results ── */}
         {result && (
@@ -431,9 +431,9 @@ export default function App() {
             <div className="steps-row">
               {[
                 { icon: '📤', step: '1', title: 'Upload or Capture', desc: 'Upload a photo from your device or capture directly using your camera' },
-                { icon: '🔍', step: '2', title: 'Quality Check',     desc: 'OpenCV checks image sharpness and lighting before AI analysis' },
-                { icon: '🤖', step: '3', title: 'AI Analysis',       desc: 'MobileNetV2 trained on 10,015 HAM10000 images classifies the lesion' },
-                { icon: '📋', step: '4', title: 'Get Results',       desc: 'Receive disease prediction, confidence score, and medical recommendations' },
+                { icon: '🔍', step: '2', title: 'Quality Check', desc: 'OpenCV checks image sharpness and lighting before AI analysis' },
+                { icon: '🤖', step: '3', title: 'AI Analysis', desc: 'MobileNetV2 trained on 10,015 HAM10000 images classifies the lesion' },
+                { icon: '📋', step: '4', title: 'Get Results', desc: 'Receive disease prediction, confidence score, and medical recommendations' },
               ].map((s) => (
                 <div key={s.step} className="step-item">
                   <div className="step-icon">{s.icon}</div>
@@ -445,10 +445,10 @@ export default function App() {
             </div>
             <div className="disease-tags">
               <div className="disease-tags-label">Detects 7 skin conditions:</div>
-              {['Melanoma','Nevus','Basal Cell Carcinoma','Actinic Keratosis',
-                'Benign Keratosis','Dermatofibroma','Vascular Lesion'].map(d => (
-                <span key={d} className="disease-tag">{d}</span>
-              ))}
+              {['Melanoma', 'Nevus', 'Basal Cell Carcinoma', 'Actinic Keratosis',
+                'Benign Keratosis', 'Dermatofibroma', 'Vascular Lesion'].map(d => (
+                  <span key={d} className="disease-tag">{d}</span>
+                ))}
             </div>
           </div>
         )}
@@ -459,7 +459,7 @@ export default function App() {
         <div className="footer-inner">
           <span className="footer-left">
             Dermalens · A first look, held with care. &nbsp;·&nbsp;
-            Final Year Project — B.Tech IT · KKWIEER, Nashik · 2025–26
+            Personal Project — B.Tech IT · KKWIEER, Nashik 
           </span>
           <span className="footer-right">
             <span className="footer-dot" />

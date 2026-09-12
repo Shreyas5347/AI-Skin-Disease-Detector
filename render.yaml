@@ -1,0 +1,19 @@
+# render.yaml — Render deployment configuration
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: skin-disease-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    plan: free            # change to "starter" or higher for production
+    envVars:
+      - key: ALLOWED_ORIGINS
+        sync: false       # set this manually in Render dashboard after deploying frontend
+        # Example value: https://your-app.vercel.app
+      - key: PYTHON_VERSION
+        value: "3.11.0"
+    healthCheckPath: /health
+    autoDeploy: true
