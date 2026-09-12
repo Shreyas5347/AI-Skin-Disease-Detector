@@ -8,7 +8,6 @@ Updated for:
 
 import io
 import json
-import os
 import numpy as np
 from PIL import Image
 from fastapi import APIRouter, UploadFile, File, HTTPException
@@ -17,34 +16,45 @@ from routes.image_utils import check_image_quality
 
 router = APIRouter()
 
-# ── Paths ─────────────────────────────────────────────────────────
-# Anchored to THIS file's location — works regardless of where uvicorn is invoked.
-BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
-MODEL_DIR   = os.path.normpath(os.path.join(BASE_DIR, '..', 'model'))
-MODEL_H5    = os.path.join(MODEL_DIR, 'skin_disease_model.h5')
-MODEL_KERAS = os.path.join(MODEL_DIR, 'skin_disease_model.keras')
-MODEL_PATH  = MODEL_H5 if os.path.exists(MODEL_H5) else MODEL_KERAS
-IDX_PATH    = os.path.join(MODEL_DIR, 'class_indices.json')
+from huggingface_hub import hf_hub_download
 
-# ── Load model once at startup ────────────────────────────────────
+# ── Hugging Face Model Repository ────────────────────────────────
+
+MODEL_REPO = "Shreyas5347/skin-disease-model"
+
+# ── Download model and class mapping ─────────────────────────────
+
 try:
-    model = tf.keras.models.load_model(os.path.abspath(MODEL_PATH))
+    MODEL_PATH = hf_hub_download(
+        repo_id=MODEL_REPO,
+        filename="skin_disease_model.h5"
+    )
+
+    IDX_PATH = hf_hub_download(
+        repo_id=MODEL_REPO,
+        filename="class_indices.json"
+    )
+
+    # Load model once at startup
+    model = tf.keras.models.load_model(MODEL_PATH)
+    try:
+        with open(IDX_PATH) as f:
+            class_indices = json.load(f)
+
+        CLASS_NAMES = {v: k for k, v in class_indices.items()}
+
+        print("[OK] Class indices loaded:", CLASS_NAMES)
+
+    except Exception as e:
+        print(f"[ERROR] class_indices.json load failed: {e}")
+        CLASS_NAMES = {}
+
     print("[OK] Model loaded:", MODEL_PATH)
+    print("[OK] Class indices loaded:", IDX_PATH)
+
 except Exception as e:
     print(f"[ERROR] Model load failed: {e}")
     model = None
-
-# ── Load class indices ────────────────────────────────────────────
-# class_indices.json: {"actinic_keratosis": 0, "basal_cell_carcinoma": 1, ...}
-# We invert it to: {0: "actinic_keratosis", 1: "basal_cell_carcinoma", ...}
-try:
-    with open(os.path.abspath(IDX_PATH)) as f:
-        class_indices = json.load(f)
-    CLASS_NAMES = {v: k for k, v in class_indices.items()}
-    print("[OK] Class indices loaded:", CLASS_NAMES)
-except Exception as e:
-    print(f"[ERROR] class_indices.json load failed: {e}")
-    CLASS_NAMES = {}
 
 # ── Image size ────────────────────────────────────────────────────
 # MobileNetV2  → 224
