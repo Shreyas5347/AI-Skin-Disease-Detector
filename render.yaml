@@ -14,6 +14,6 @@ services:
         sync: false       # set this manually in Render dashboard after deploying frontend
         # Example value: https://your-app.vercel.app
       - key: PYTHON_VERSION
-        value: "3.11.0"
+        value: "3.11.9"
     healthCheckPath: /health
     autoDeploy: true
