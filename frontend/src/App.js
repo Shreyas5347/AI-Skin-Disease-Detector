@@ -64,7 +64,7 @@ export default function App() {
     const fd = new FormData();
     fd.append('file', image);
     try {
-      const res = await axios.post(`${API_URL}/predict`, fd, {
+      const res = await axios.post(`${API_URL}/api/predict`, fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 60000,
       });
